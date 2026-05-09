@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>🎲 Rolling Dice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<!-- ════════════════════════════
+     화면 1: 타이틀
+════════════════════════════════ -->
+<div id="screen-title" class="screen">
+  <div class="bg-dice-wrap" id="bg-dice-wrap"></div>
+  <div class="title-card">
+    <h1 class="hand-title">Rolling Dice</h1>
+    <div class="name-section">
+      <p class="hand-label">이름을 정하세요!</p>
+      <input type="text" id="player-name-input"
+             class="hand-input" placeholder="이름 입력..."
+             maxlength="10" autocomplete="off"/>
+      <button id="btn-to-mode" class="hand-btn">시작하기</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════
+     화면 2: 모드 선택
+════════════════════════════════ -->
+<div id="screen-mode" class="screen hidden">
+  <div class="bg-dice-wrap" id="bg-dice-wrap2"></div>
+  <div class="mode-card">
+    <button id="btn-ai-mode"   class="hand-btn mode-btn-big">AI모드</button>
+    <button id="btn-user-mode" class="hand-btn mode-btn-big mode-disabled" disabled>유저모드</button>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════
+     화면 3: 능력 선택 (NEW)
+════════════════════════════════ -->
+<div id="screen-ability" class="screen hidden">
+  <div class="bg-dice-wrap" id="bg-dice-wrap3"></div>
+
+  <div class="ability-select-wrap">
+    <h2 class="ability-select-title">특수 능력 선택</h2>
+    <p class="ability-select-sub">게임 중 <b>2회</b> 사용 가능 &nbsp;·&nbsp; 턴당 <b>1회</b>만 사용 가능</p>
+
+    <div class="ability-choices">
+
+      <!-- 저격 카드 -->
+      <div class="ability-choice-card" id="choice-sniper" data-ability="sniper">
+        <div class="ac-icon">🎯</div>
+        <div class="ac-name">저격</div>
+        <div class="ac-desc">
+          원하는 숫자 1개를<br>주사위에 <b>확정 고정</b>
+        </div>
+        <div class="ac-badge">게임당 2회 · 턴당 1회</div>
+      </div>
+
+      <!-- 더블찬스 카드 -->
+      <div class="ability-choice-card" id="choice-double" data-ability="doubleChance">
+        <div class="ac-icon">🎲</div>
+        <div class="ac-name">더블찬스</div>
+        <div class="ac-desc">
+          이번 턴 굴리기 횟수<br><b>+1</b> (굴리기 전에 사용)
+        </div>
+        <div class="ac-badge">게임당 2회 · 턴당 1회</div>
+      </div>
+
+    </div>
+
+    <button id="btn-confirm-ability" class="hand-btn ability-confirm-btn" disabled>
+      능력 선택 후 게임 시작!
+    </button>
+  </div>
+</div>
+<!-- ════════════════════════════
+     화면 4: 게임
+════════════════════════════════ -->
+<div id="screen-game" class="screen hidden">
+
+  <aside class="score-panel">
+    <table class="sc-table">
+      <thead>
+        <tr>
+          <td class="sc-turn-cell">
+            Turn<br>
+            <span class="sc-turn-big">
+              <span id="turn-current">1</span>/12
+            </span>
+          </td>
+          <td class="sc-phdr sc-phdr-p" id="label-player">나</td>
+          <td class="sc-phdr sc-phdr-a" id="label-ai">AI</td>
+        </tr>
+        <tr><td colspan="3" class="sc-cat-hdr">Categories</td></tr>
+      </thead>
+      <tbody>
+        <tr data-cat="ones">
+          <td class="sc-cat">⚀ Aces</td>
+          <td class="sc-cell cell-player">-</td>
+          <td class="sc-cell cell-ai">-</td>
+        </tr>
+        <tr data-cat="twos">
+          <td class="sc-cat">⚁ Deuces</td>
+          <td class="sc-cell cell-player">-</td>
+          <td class="sc-cell cell-ai">-</td>
+        </tr>
+        <tr data-cat="threes">
+          <td class="sc-cat">⚂ Threes</td>
+          <td class="sc-cell cell-player">-</td>
+          <td class="sc-cell cell-ai">-</td>
+        </tr>
+        <tr data-cat="fours">
+          <td class="sc-cat">⚃ Fours</td>
+          <td class="sc-cell cell-player">-</td>
+          <td class="sc-cell cell-ai">-</td>
+        </tr>
+        <tr data-cat="fives">
+          <td class="sc-cat">⚄ Fives</td>
+          <td class="sc-cell cell-player">-</td>
+          <td class="sc-cell cell-ai">-</td>
+        </tr>
+        <tr data-cat="sixes">
+          <td class="sc-cat">⚅ Sixes</td>
+          <td class="sc-cell cell-player">-</td>
+          <td class="sc-cell cell-ai">-</td>
+        </tr>
+        <tr id="row-subtotal" class="sc-sub-row">
+          <td class="sc-sub-lbl">Subtotal</td>
+          <td class="sc-sub-val cell-player">0/63</td>
+          <td class="sc-sub-val cell-ai">0/63</td>
+        </tr>
+        <tr id="row-bonus" class="sc-bonus-row">
+          <td class="sc-sub-lbl">+35 Bonus</td>
+          <td class="sc-sub-val cell-player">-</td>
+          <td class="sc-sub-val cell-ai">-</td>
+        </tr>
+        <tr class="sc-hint-row">
+          <td colspan="3" class="sc-hint-txt">Bonus if ⚀-⚅ are over 63 points</td>
+        </tr>
+        <tr data-cat="choice">
+          <td class="sc-cat">✕ Choice</td>
+          <td class="sc-cell cell-player">-</td>
+          <td class="sc-cell cell-ai">-</td>
+        </tr>
+        <tr class="sc-sep-row"><td colspan="3"></td></tr>
+        <tr data-cat="fourOfAKind">
+          <td class="sc-cat">⁴ 4 of a Kind</td>
+          <td class="sc-cell cell-player">-</td>
+          <td class="sc-cell cell-ai">-</td>
+        </tr>
+        <tr data-cat="fullHouse">
+          <td class="sc-cat">🏠 Full House</td>
+          <td class="sc-cell cell-player">-</td>
+          <td class="sc-cell cell-ai">-</td>
+        </tr>
+        <tr data-cat="smallStraight">
+          <td class="sc-cat">↗ S. Straight</td>
+          <td class="sc-cell cell-player">-</td>
+          <td class="sc-cell cell-ai">-</td>
+        </tr>
+        <tr data-cat="largeStraight">
+          <td class="sc-cat">↗↗ L. Straight</td>
+          <td class="sc-cell cell-player">-</td>
+          <td class="sc-cell cell-ai">-</td>
+        </tr>
+        <tr data-cat="yacht">
+          <td class="sc-cat">🚢 Yacht</td>
+          <td class="sc-cell cell-player">-</td>
+          <td class="sc-cell cell-ai">-</td>
+        </tr>
+        <tr id="row-total" class="sc-total-row">
+          <td class="sc-total-lbl">Total</td>
+          <td class="sc-total-val cell-player">0</td>
+          <td class="sc-total-val cell-ai">0</td>
+        </tr>
+      </tbody>
+    </table>
+  </aside>
+
+  <main class="dice-panel">
+    <div class="dice-hud">
+      <div id="phase-msg" class="phase-msg">주사위를 굴려주세요!</div>
+      <div class="rolls-badge">🎲 <span id="rolls-left">3</span> left</div>
+    </div>
+
+    <div id="dice-canvas-wrapper"></div>
+
+    <div class="dice-controls">
+      <p id="keep-hint" class="keep-hint">
+        👆 굴린 후 주사위를 클릭하면 킵(고정)할 수 있어요
+      </p>
+      <button id="btn-roll" class="btn-roll">🎲 주사위 굴리기</button>
+
+      <!-- 능력 버튼 -->
+      <button id="btn-ability" class="btn-ability" disabled>
+        <span id="ability-btn-icon">🎯</span>
+        <span id="ability-btn-name">저격</span>
+        <span class="ability-charges">
+          <span class="charge" id="ability-charge-1">●</span>
+          <span class="charge" id="ability-charge-2">●</span>
+        </span>
+        <span id="ability-btn-status" class="ability-status">굴리기 후 사용 가능</span>
+      </button>
+    </div>
+  </main>
+</div>
+
+
+<!-- 저격 숫자 선택 모달 -->
+<div id="sniper-modal" class="sniper-modal hidden">
+  <div class="sniper-panel">
+    <p class="sniper-title">🎯 확정할 숫자를 선택하세요</p>
+    <div class="sniper-numbers">
+      <button class="sniper-num" data-num="1">1</button>
+      <button class="sniper-num" data-num="2">2</button>
+      <button class="sniper-num" data-num="3">3</button>
+      <button class="sniper-num" data-num="4">4</button>
+      <button class="sniper-num" data-num="5">5</button>
+      <button class="sniper-num" data-num="6">6</button>
+    </div>
+    <button id="sniper-cancel" class="sniper-cancel-btn">취소</button>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════
+     화면 5: 결과
+════════════════════════════════ -->
+<div id="screen-result" class="screen hidden">
+  <div class="result-wrap">
+    <div id="result-winner" class="result-winner">🏆 플레이어 승리!</div>
+    <div class="result-score-cards">
+      <div class="rscore-card player-card">
+        <div class="rscore-who" id="result-player-name">나</div>
+        <div class="rscore-total" id="result-player-total">0</div>
+      </div>
+      <div class="rscore-vs">VS</div>
+      <div class="rscore-card ai-card">
+        <div class="rscore-who">AI</div>
+        <div class="rscore-total" id="result-ai-total">0</div>
+      </div>
+    </div>
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>카테고리</th>
+          <th id="result-th-player">나</th>
+          <th>AI</th>
+        </tr>
+      </thead>
+      <tbody id="result-tbody"></tbody>
+    </table>
+    <button id="btn-play-again" class="btn-play-again">🔄 다시 하기</button>
+  </div>
+</div>
+
+<script src="js/dice.js"></script>
+<script src="js/scorecard.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
