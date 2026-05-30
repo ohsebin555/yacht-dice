@@ -55,6 +55,8 @@ function playSFX(name, ...args) {
 function showScreen(id) {
   [screenTitle, screenMode, screenAbility, screenGame, screenResult]
     .forEach(s => s.classList.add('hidden'));
+  const screenMulti = document.getElementById('screen-multi');
+  if (screenMulti) screenMulti.classList.add('hidden');
   document.getElementById(id).classList.remove('hidden');
 }
 
