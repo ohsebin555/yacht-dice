@@ -171,6 +171,9 @@ document.getElementById('btn-ai-mode').addEventListener('click', () => {
   showScreen('screen-ability');
 });
 
+document.getElementById('btn-user-mode').addEventListener('click', () => {
+  showScreen('screen-multi');
+});
 
 // ══════════════════════════════════════════
 //  능력 선택 화면
@@ -483,7 +486,15 @@ function onPlayerScoreSelect(cat) {
   closeSniperModal();
   updateScoreCard(game.playerScores, game.aiScores, [], false, 0, null);
 
-  setTimeout(startAITurn, 800);
+if (socket && socket.connected) {
+    socket.emit('scoreSelect', { playerIndex: myPlayerIndex, cat, score });
+    socket.emit('turnEnd', { turn: myPlayerIndex === 0 ? 1 : 0, round: game.round + 1 });
+    if (game.round >= game.totalRounds) {
+      showResults();
+    }
+  } else {
+    setTimeout(startAITurn, 800);
+  }
 }
 
 
@@ -655,6 +666,118 @@ document.getElementById('btn-play-again').addEventListener('click', () => {
   document.getElementById('btn-confirm-ability').disabled = true;
   showScreen('screen-title');
   createBgDice('bg-dice-wrap');
+});
+// ══════════════════════════════════════════
+//  멀티플레이 Socket.io
+// ══════════════════════════════════════════
+let socket = null;
+let myPlayerIndex = 0;
+let isMyTurn = false;
+let opponentName = 'AI';
+
+function initMulti() {
+  socket = io();
+
+  socket.on('roomCreated', (code) => {
+    document.getElementById('multi-status').classList.remove('hidden');
+    document.getElementById('room-code-display').textContent = `방 코드: ${code}`;
+    document.getElementById('multi-status-text').textContent = '상대방 기다리는 중...';
+  });
+
+  socket.on('playerJoined', ({ players }) => {
+    document.getElementById('multi-status-text').textContent = `${players[0]} vs ${players[1]} 준비!`;
+    document.getElementById('multi-ability-select').classList.remove('hidden');
+  });
+
+  socket.on('joinError', (msg) => {
+    alert(msg);
+  });
+
+  socket.on('gameStart', ({ players, firstTurn }) => {
+    opponentName = players[myPlayerIndex === 0 ? 1 : 0].name;
+    abilitySystem.type = players[myPlayerIndex].ability;
+    abilitySystem.usesLeft = 2;
+    abilitySystem.usedThisTurn = false;
+    isMyTurn = myPlayerIndex === firstTurn;
+    document.getElementById('label-ai').textContent = opponentName;
+    startGame();
+    if (!isMyTurn) {
+      btnRoll.disabled = true;
+      phaseEl.textContent = `${opponentName}의 턴...`;
+    }
+  });
+
+  socket.on('opponentRoll', ({ values }) => {
+    values.forEach((v, i) => { diceMeshes[i].userData.value = v; });
+  });
+
+  socket.on('opponentKeep', ({ idx, kept }) => {
+    diceMeshes[idx].userData.kept = kept;
+    diceMeshes[idx].userData.outline.visible = kept;
+  });
+
+  socket.on('scoreUpdate', ({ playerIndex, cat, score }) => {
+    if (playerIndex !== myPlayerIndex) {
+      game.aiScores[cat] = score;
+      updateScoreCard(game.playerScores, game.aiScores, [], false, 0, null);
+    }
+  });
+
+  socket.on('nextTurn', ({ turn, round }) => {
+    game.round = round;
+    isMyTurn = turn === myPlayerIndex;
+    if (isMyTurn) {
+      startPlayerTurn();
+    } else {
+      btnRoll.disabled = true;
+      phaseEl.textContent = `${opponentName}의 턴...`;
+      phaseEl.className = 'phase-msg ai-turn';
+      resetDice();
+    }
+  });
+
+  socket.on('opponentLeft', () => {
+    alert('상대방이 나갔어요!');
+    location.reload();
+  });
+}
+
+// 방 만들기 버튼
+document.getElementById('btn-create-room').addEventListener('click', () => {
+  myPlayerIndex = 0;
+  initMulti();
+  socket.emit('createRoom', game.playerName);
+  createBgDice('bg-dice-wrap4');
+});
+
+// 방 입장 버튼
+document.getElementById('btn-join-room').addEventListener('click', () => {
+  const code = document.getElementById('input-room-code').value.toUpperCase();
+  if (!code) { alert('방 코드를 입력하세요!'); return; }
+  myPlayerIndex = 1;
+  initMulti();
+  socket.emit('joinRoom', { roomCode: code, playerName: game.playerName });
+  createBgDice('bg-dice-wrap4');
+});
+
+// 멀티 능력 선택
+let multiSelectedAbility = null;
+document.querySelectorAll('#multi-choice-sniper, #multi-choice-double').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('#multi-choice-sniper, #multi-choice-double')
+      .forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    multiSelectedAbility = card.dataset.ability;
+    document.getElementById('btn-multi-ready').disabled = false;
+  });
+});
+
+// 준비 완료 버튼
+document.getElementById('btn-multi-ready').addEventListener('click', () => {
+  if (!multiSelectedAbility) return;
+  socket.emit('readyToStart', { ability: multiSelectedAbility });
+  document.getElementById('btn-multi-ready').disabled = true;
+  document.getElementById('btn-multi-ready').textContent = '상대방 기다리는 중...';
 });
 
 // ── 시작 ──
