@@ -460,12 +460,17 @@ window.addEventListener('load', () => {
   const btnJoinRoom = document.getElementById('btn-join-room');
   const btnMultiReady = document.getElementById('btn-multi-ready');
 
-  if (btnCreateRoom) {
-    btnCreateRoom.addEventListener('click', () => {
-      myPlayerIndex=0;
+if (btnJoinRoom) {
+    btnJoinRoom.addEventListener('click', () => {
+      const code=document.getElementById('input-room-code').value.toUpperCase();
+      if (!code) { alert('방 코드를 입력하세요!'); return; }
+      myPlayerIndex=1;
       initMulti();
-      socket.emit('createRoom', game.playerName);
+      socket.emit('joinRoom', { roomCode:code, playerName:game.playerName });
       createBgDice('bg-dice-wrap4');
+      // 방 입장 시 바로 능력 선택 화면으로 전환
+      document.getElementById('multi-state-main').classList.add('hidden');
+      document.getElementById('multi-state-ability').classList.remove('hidden');
     });
   }
 
