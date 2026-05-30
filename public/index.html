@@ -84,6 +84,44 @@
 <!-- ════════════════════════════
      화면 4: 게임
 ════════════════════════════════ -->
+<div id="screen-multi" class="screen hidden">
+  <div class="bg-dice-wrap" id="bg-dice-wrap4"></div>
+  <div class="title-card">
+    <h1 class="hand-title">👥 멀티플레이</h1>
+    <div class="name-section">
+      <button id="btn-create-room" class="hand-btn">🏠 방 만들기</button>
+      <p class="hand-label" style="margin:0">또는</p>
+      <input type="text" id="input-room-code" class="hand-input"
+             placeholder="방 코드 입력..." maxlength="5"
+             style="text-transform:uppercase; text-align:center;"/>
+      <button id="btn-join-room" class="hand-btn">🚪 방 입장</button>
+    </div>
+    <div id="multi-status" class="multi-status hidden">
+      <p id="multi-status-text">대기 중...</p>
+      <p id="room-code-display" class="room-code"></p>
+    </div>
+    <div id="multi-ability-select" class="hidden">
+      <p class="hand-label">특수 능력 선택</p>
+      <div class="ability-choices" style="margin-top:16px;">
+        <div class="ability-choice-card" id="multi-choice-sniper" data-ability="sniper">
+          <div class="ac-icon">🎯</div>
+          <div class="ac-name">저격</div>
+          <div class="ac-desc">원하는 숫자 1개를<br>주사위에 <b>확정 고정</b></div>
+          <div class="ac-badge">게임당 2회 · 턴당 1회</div>
+        </div>
+        <div class="ability-choice-card" id="multi-choice-double" data-ability="doubleChance">
+          <div class="ac-icon">🎲</div>
+          <div class="ac-name">더블찬스</div>
+          <div class="ac-desc">이번 턴 굴리기 횟수<br><b>+1</b></div>
+          <div class="ac-badge">게임당 2회 · 턴당 1회</div>
+        </div>
+      </div>
+      <button id="btn-multi-ready" class="hand-btn ability-confirm-btn" disabled style="margin-top:20px;">
+        능력 선택 후 준비 완료!
+      </button>
+    </div>
+  </div>
+</div>
 <div id="screen-game" class="screen hidden">
 
   <aside class="score-panel">
