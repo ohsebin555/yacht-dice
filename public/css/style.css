@@ -771,3 +771,47 @@ body {
   border-color: #aaa;
   color: #fff;
 }
+
+/* ════════════════════════════════════════
+   멀티플레이 화면
+════════════════════════════════════════ */
+.multi-state-wrap {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.multi-state-wrap.hidden {
+  display: none !important;
+}
+
+#screen-multi {
+  background: #AADF2E;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 대기 화면 점 애니메이션 */
+.wait-dots {
+  display: flex;
+  gap: 8px;
+  font-size: 1.5rem;
+  color: #1a1a1a;
+}
+
+.wait-dots span:nth-child(1) { animation: dotBlink 1.2s 0.0s infinite; }
+.wait-dots span:nth-child(2) { animation: dotBlink 1.2s 0.4s infinite; }
+.wait-dots span:nth-child(3) { animation: dotBlink 1.2s 0.8s infinite; }
+
+@keyframes dotBlink {
+  0%,100% { opacity: 0.2; }
+  50%      { opacity: 1; }
+}
+
+/* 방 코드 표시 */
+.room-code { display: none; }
+.multi-status { display: none; }

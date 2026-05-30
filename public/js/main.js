@@ -387,17 +387,24 @@ function initMulti() {
   socket = io();
 
   socket.on('roomCreated', (code) => {
-    document.getElementById('multi-status').classList.remove('hidden');
-    document.getElementById('room-code-display').textContent = `방 코드: ${code}`;
-    document.getElementById('multi-status-text').textContent = '상대방 기다리는 중...';
+    // 대기 화면으로 전환
+    document.getElementById('multi-state-main').classList.add('hidden');
+    document.getElementById('multi-state-wait').classList.remove('hidden');
+    document.getElementById('room-code-big').textContent = code;
   });
 
   socket.on('playerJoined', ({ players }) => {
-    document.getElementById('multi-status-text').textContent = `${players[0]} vs ${players[1]} 준비!`;
-    document.getElementById('multi-ability-select').classList.remove('hidden');
+    // 능력 선택 화면으로 전환
+    document.getElementById('multi-state-wait').classList.add('hidden');
+    document.getElementById('multi-state-ability').classList.remove('hidden');
   });
 
   socket.on('joinError', (msg) => { alert(msg); });
+
+  socket.on('opponentReady', () => {
+    document.getElementById('multi-opponent-status').classList.add('hidden');
+    document.getElementById('multi-opponent-ready').classList.remove('hidden');
+  });
 
   socket.on('gameStart', ({ players, firstTurn }) => {
     opponentName = players[myPlayerIndex===0?1:0].name;

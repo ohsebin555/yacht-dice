@@ -50,11 +50,15 @@ io.on('connection', (socket) => {
   });
 
   // 능력 선택 후 게임 시작
-  socket.on('readyToStart', ({ ability }) => {
+socket.on('readyToStart', ({ ability }) => {
     const room = rooms[socket.roomCode];
     if (!room) return;
     const idx = room.players.findIndex(p => p.id === socket.id);
     if (idx !== -1) room.players[idx].ability = ability;
+
+    // 상대방에게 준비 완료 알림
+    socket.to(socket.roomCode).emit('opponentReady');
+
     const readyCount = room.players.filter(p => p.ability).length;
     if (readyCount === 2) {
       io.to(socket.roomCode).emit('gameStart', {
