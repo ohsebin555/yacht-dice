@@ -259,6 +259,10 @@ function useAbility() {
   abilitySystem.usesLeft--;
   abilitySystem.usedThisTurn=true;
   playSFX('playClick');
+  // 멀티플레이면 상대방에게 능력 사용 알림
+  if (socket && socket.connected) {
+    socket.emit('abilityUsed', { type: abilitySystem.type });
+  }
   updateAbilityButton();
 }
 
@@ -493,7 +497,19 @@ function initMulti() {
       resetDice();
     }
   });
-
+  socket.on('opponentAbility', ({ type }) => {
+  const names = { sniper:'저격 🎯', doubleChance:'더블찬스 🎲' };
+  const msg = document.getElementById('opponent-ability-msg');
+  if (msg) {
+    msg.textContent = `${opponentName}이 ${names[type]} 사용!`;
+    msg.classList.remove('hidden');
+    msg.style.animation = 'none';
+    setTimeout(() => {
+      msg.style.animation = 'fadeInOut 3s ease-in-out forwards';
+      setTimeout(() => msg.classList.add('hidden'), 3000);
+    }, 10);
+  }
+});
   socket.on('opponentLeft', () => {
     alert('상대방이 나갔어요!');
     location.reload();

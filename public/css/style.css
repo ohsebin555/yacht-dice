@@ -936,3 +936,22 @@ body {
   background: rgba(124,58,237,.4);
   border-color: rgba(167,139,250,.8);
 }
+/* 상대방 능력 사용 알림 */
+.opponent-ability-msg {
+  font-size: .85rem;
+  font-weight: 700;
+  color: #fbbf24;
+  background: rgba(251,191,36,.15);
+  border: 1px solid rgba(251,191,36,.3);
+  padding: 4px 12px;
+  border-radius: 18px;
+  white-space: nowrap;
+  animation: fadeInOut 3s ease-in-out forwards;
+}
+
+@keyframes fadeInOut {
+  0%   { opacity: 0; transform: translateY(-8px); }
+  15%  { opacity: 1; transform: translateY(0); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
