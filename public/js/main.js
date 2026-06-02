@@ -543,22 +543,19 @@ if (btnMultiReady) {
 //  도움말
 // ══════════════════════════════════════════
 function openHelp() {
-  document.getElementById('help-modal').classList.remove('hidden');
+  const modal = document.getElementById('help-modal');
+  if (modal) modal.classList.remove('hidden');
 }
 function closeHelp() {
-  document.getElementById('help-modal').classList.add('hidden');
+  const modal = document.getElementById('help-modal');
+  if (modal) modal.classList.add('hidden');
 }
 
-const helpCloseBtn = document.getElementById('help-close');
-const helpModal = document.getElementById('help-modal');
-const btnHelp = document.getElementById('btn-help');
-const btnHelpIngame = document.getElementById('btn-help-ingame');
-
-if (helpCloseBtn) helpCloseBtn.addEventListener('click', closeHelp);
-if (helpModal) helpModal.addEventListener('click', (e) => {
-  if (e.target === helpModal) closeHelp();
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'help-close') closeHelp();
+  if (e.target.id === 'help-modal') closeHelp();
+  if (e.target.id === 'btn-help') openHelp();
+  if (e.target.id === 'btn-help-ingame') openHelp();
 });
-if (btnHelp) btnHelp.addEventListener('click', openHelp);
-if (btnHelpIngame) btnHelpIngame.addEventListener('click', openHelp);
 
 showScreen('screen-title');
