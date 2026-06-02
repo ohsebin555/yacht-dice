@@ -289,10 +289,16 @@ btnRoll.addEventListener('click', ()=>{
   if (isRolling) return;
   const keptIdx=diceMeshes.filter(d=>d.userData.kept).map(d=>d.userData.index);
   btnRoll.disabled=true; setCanInteract(false);
-  rollDice(keptIdx, values=>{
+rollDice(keptIdx, values=>{
     game.currentDice=values; game.rollsLeft--;
     rollsLeftEl.textContent=game.rollsLeft;
     game.phase='choosing';
+
+    // 멀티플레이면 굴리기 결과 상대방에게 전송
+    if (socket && socket.connected) {
+      socket.emit('rollResult', { values });
+    }
+
     if (game.rollsLeft>0) { btnRoll.disabled=false; phaseEl.textContent='주사위를 킵하거나 다시 굴리세요!'; }
     else { btnRoll.disabled=true; phaseEl.textContent='점수를 선택하세요! (점수판 클릭)'; }
     setCanInteract(true);

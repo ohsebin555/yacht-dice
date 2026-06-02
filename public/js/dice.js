@@ -352,13 +352,16 @@ renderer.domElement.addEventListener('click', e => {
 });
 
 function toggleKeep(idx) {
-    // 저격으로 고정된 주사위는 해제 불가
   if (diceMeshes[idx].userData.sniped) return;
-  const die  = diceMeshes[idx];
+  const die = diceMeshes[idx];
   const body = diceBodies[idx];
   die.userData.kept = !die.userData.kept;
   die.userData.outline.visible = die.userData.kept;
 
+  // 멀티플레이면 킵 상태 상대방에게 전송
+  if (typeof socket !== 'undefined' && socket && socket.connected) {
+    socket.emit('keepChange', { idx, kept: die.userData.kept });
+  }
   body.type = CANNON.Body.STATIC;
   body.velocity.setZero();
   body.angularVelocity.setZero();
