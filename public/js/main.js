@@ -549,11 +549,16 @@ function closeHelp() {
   document.getElementById('help-modal').classList.add('hidden');
 }
 
-document.getElementById('help-close').addEventListener('click', closeHelp);
-document.getElementById('help-modal').addEventListener('click', (e) => {
-  if (e.target === document.getElementById('help-modal')) closeHelp();
-});
+const helpCloseBtn = document.getElementById('help-close');
+const helpModal = document.getElementById('help-modal');
+const btnHelp = document.getElementById('btn-help');
+const btnHelpIngame = document.getElementById('btn-help-ingame');
 
-document.getElementById('btn-help').addEventListener('click', openHelp);
-document.getElementById('btn-help-ingame').addEventListener('click', openHelp);
+if (helpCloseBtn) helpCloseBtn.addEventListener('click', closeHelp);
+if (helpModal) helpModal.addEventListener('click', (e) => {
+  if (e.target === helpModal) closeHelp();
+});
+if (btnHelp) btnHelp.addEventListener('click', openHelp);
+if (btnHelpIngame) btnHelpIngame.addEventListener('click', openHelp);
+
 showScreen('screen-title');
