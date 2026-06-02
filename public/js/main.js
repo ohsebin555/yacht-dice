@@ -387,14 +387,12 @@ function initMulti() {
   socket = io();
 
   socket.on('roomCreated', (code) => {
-    // 대기 화면으로 전환
     document.getElementById('multi-state-main').classList.add('hidden');
     document.getElementById('multi-state-wait').classList.remove('hidden');
     document.getElementById('room-code-big').textContent = code;
   });
 
   socket.on('playerJoined', ({ players }) => {
-    // 능력 선택 화면으로 전환
     document.getElementById('multi-state-wait').classList.add('hidden');
     document.getElementById('multi-state-ability').classList.remove('hidden');
   });
@@ -455,54 +453,50 @@ function initMulti() {
   });
 }
 
-window.addEventListener('load', () => {
-  const btnCreateRoom = document.getElementById('btn-create-room');
-  const btnJoinRoom = document.getElementById('btn-join-room');
-  const btnMultiReady = document.getElementById('btn-multi-ready');
+// 멀티플레이 버튼 이벤트
+const btnCreateRoom = document.getElementById('btn-create-room');
+const btnJoinRoom = document.getElementById('btn-join-room');
+const btnMultiReady = document.getElementById('btn-multi-ready');
+
+if (btnCreateRoom) {
+  btnCreateRoom.addEventListener('click', () => {
+    myPlayerIndex=0;
+    initMulti();
+    socket.emit('createRoom', game.playerName);
+    createBgDice('bg-dice-wrap4');
+  });
+}
 
 if (btnJoinRoom) {
-    btnJoinRoom.addEventListener('click', () => {
-      const code=document.getElementById('input-room-code').value.toUpperCase();
-      if (!code) { alert('방 코드를 입력하세요!'); return; }
-      myPlayerIndex=1;
-      initMulti();
-      socket.emit('joinRoom', { roomCode:code, playerName:game.playerName });
-      createBgDice('bg-dice-wrap4');
-      // 방 입장 시 바로 능력 선택 화면으로 전환
-      document.getElementById('multi-state-main').classList.add('hidden');
-      document.getElementById('multi-state-ability').classList.remove('hidden');
-    });
-  }
-
-  if (btnJoinRoom) {
-    btnJoinRoom.addEventListener('click', () => {
-      const code=document.getElementById('input-room-code').value.toUpperCase();
-      if (!code) { alert('방 코드를 입력하세요!'); return; }
-      myPlayerIndex=1;
-      initMulti();
-      socket.emit('joinRoom', { roomCode:code, playerName:game.playerName });
-      createBgDice('bg-dice-wrap4');
-    });
-  }
-
-  document.querySelectorAll('#multi-choice-sniper, #multi-choice-double').forEach(card => {
-    card.addEventListener('click', () => {
-      document.querySelectorAll('#multi-choice-sniper, #multi-choice-double')
-        .forEach(c=>c.classList.remove('selected'));
-      card.classList.add('selected');
-      multiSelectedAbility=card.dataset.ability;
-      if (btnMultiReady) btnMultiReady.disabled=false;
-    });
+  btnJoinRoom.addEventListener('click', () => {
+    const code=document.getElementById('input-room-code').value.toUpperCase();
+    if (!code) { alert('방 코드를 입력하세요!'); return; }
+    myPlayerIndex=1;
+    initMulti();
+    socket.emit('joinRoom', { roomCode:code, playerName:game.playerName });
+    createBgDice('bg-dice-wrap4');
+    document.getElementById('multi-state-main').classList.add('hidden');
+    document.getElementById('multi-state-ability').classList.remove('hidden');
   });
+}
 
-  if (btnMultiReady) {
-    btnMultiReady.addEventListener('click', () => {
-      if (!multiSelectedAbility) return;
-      socket.emit('readyToStart', { ability:multiSelectedAbility });
-      btnMultiReady.disabled=true;
-      btnMultiReady.textContent='상대방 기다리는 중...';
-    });
-  }
+document.querySelectorAll('#multi-choice-sniper, #multi-choice-double').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('#multi-choice-sniper, #multi-choice-double')
+      .forEach(c=>c.classList.remove('selected'));
+    card.classList.add('selected');
+    multiSelectedAbility=card.dataset.ability;
+    if (btnMultiReady) btnMultiReady.disabled=false;
+  });
 });
+
+if (btnMultiReady) {
+  btnMultiReady.addEventListener('click', () => {
+    if (!multiSelectedAbility) return;
+    socket.emit('readyToStart', { ability:multiSelectedAbility });
+    btnMultiReady.disabled=true;
+    btnMultiReady.textContent='상대방 기다리는 중...';
+  });
+}
 
 showScreen('screen-title');
