@@ -6,7 +6,6 @@ const game = {
 
 const abilitySystem = {
   type: null,
-  // 저격: 1회, 더블찬스: 2회
   usesLeft: 0,
   usedThisTurn: false,
   sniperActive: false,
@@ -30,6 +29,7 @@ let myPlayerIndex = 0;
 let isMyTurn = false;
 let opponentName = 'AI';
 let multiSelectedAbility = null;
+let isMultiMode = false;
 
 const screenTitle   = document.getElementById('screen-title');
 const screenMode    = document.getElementById('screen-mode');
@@ -130,8 +130,14 @@ function goToMode() {
   showScreen('screen-mode');
 }
 
-document.getElementById('btn-ai-mode').addEventListener('click', ()=>{ showScreen('screen-ability'); });
-document.getElementById('btn-user-mode').addEventListener('click', ()=>{ showScreen('screen-multi'); });
+document.getElementById('btn-ai-mode').addEventListener('click', ()=>{
+  isMultiMode = false;
+  showScreen('screen-ability');
+});
+document.getElementById('btn-user-mode').addEventListener('click', ()=>{
+  isMultiMode = true;
+  showScreen('screen-multi');
+});
 
 let selectedAbility=null;
 document.querySelectorAll('.ability-choice-card').forEach(card => {
@@ -153,6 +159,7 @@ function startGame() {
   game.round=1; game.playerScores={}; game.aiScores={};
   abilitySystem.init(abilitySystem.type);
   document.getElementById('label-player').textContent=game.playerName;
+  document.getElementById('label-ai').textContent=isMultiMode ? opponentName : 'AI';
   updateAbilityButton();
   showScreen('screen-game');
   setTimeout(()=>window.dispatchEvent(new Event('resize')),30);
@@ -161,45 +168,44 @@ function startGame() {
 }
 
 function updateAbilityButton() {
-  const ab = abilitySystem;
-  const icons = { sniper:'🎯', doubleChance:'🎲' };
-  const names = { sniper:'저격', doubleChance:'더블찬스' };
-  document.getElementById('ability-btn-icon').textContent = icons[ab.type]||'⚡';
-  document.getElementById('ability-btn-name').textContent = names[ab.type]||'능력';
+  const ab=abilitySystem;
+  const icons={ sniper:'🎯', doubleChance:'🎲' };
+  const names={ sniper:'저격', doubleChance:'더블찬스' };
+  document.getElementById('ability-btn-icon').textContent=icons[ab.type]||'⚡';
+  document.getElementById('ability-btn-name').textContent=names[ab.type]||'능력';
 
-  // 충전 표시 (저격은 1개, 더블찬스는 2개)
-  const charge1 = document.getElementById('ability-charge-1');
-  const charge2 = document.getElementById('ability-charge-2');
-  if (ab.type === 'sniper') {
-    charge1.className = 'charge' + (ab.usesLeft >= 1 ? '' : ' empty');
-    charge2.style.display = 'none';
+  const charge1=document.getElementById('ability-charge-1');
+  const charge2=document.getElementById('ability-charge-2');
+  if (ab.type==='sniper') {
+    charge1.className='charge'+(ab.usesLeft>=1?'':' empty');
+    charge2.style.display='none';
   } else {
-    charge1.className = 'charge' + (ab.usesLeft >= 1 ? '' : ' empty');
-    charge2.style.display = '';
-    charge2.className = 'charge' + (ab.usesLeft >= 2 ? '' : ' empty');
+    charge1.className='charge'+(ab.usesLeft>=1?'':' empty');
+    charge2.style.display='';
+    charge2.className='charge'+(ab.usesLeft>=2?'':' empty');
   }
 
-  const statusEl = document.getElementById('ability-btn-status');
-  const btn = document.getElementById('btn-ability');
+  const statusEl=document.getElementById('ability-btn-status');
+  const btn=document.getElementById('btn-ability');
 
-  if (!game.isPlayerTurn || game.phase === 'ai') {
-    btn.disabled = true; btn.classList.remove('cooldown');
-    statusEl.textContent = 'AI 턴'; return;
+  if (!game.isPlayerTurn||game.phase==='ai') {
+    btn.disabled=true; btn.classList.remove('cooldown');
+    statusEl.textContent=isMultiMode?`${opponentName}의 턴`:'AI 턴'; return;
   }
-  if (ab.usesLeft <= 0) {
-    btn.disabled = true; btn.classList.add('cooldown');
-    statusEl.textContent = '사용 완료'; return;
+  if (ab.usesLeft<=0) {
+    btn.disabled=true; btn.classList.add('cooldown');
+    statusEl.textContent='사용 완료'; return;
   }
   if (ab.usedThisTurn) {
-    btn.disabled = true; btn.classList.add('cooldown');
-    statusEl.textContent = '이번 턴 사용 완료'; return;
+    btn.disabled=true; btn.classList.add('cooldown');
+    statusEl.textContent='이번 턴 사용 완료'; return;
   }
-  if (game.rollsLeft < 3) {
-    btn.disabled = true; btn.classList.add('cooldown');
-    statusEl.textContent = '굴리기 전에만 사용 가능'; return;
+  if (game.rollsLeft<3) {
+    btn.disabled=true; btn.classList.add('cooldown');
+    statusEl.textContent='굴리기 전에만 사용 가능'; return;
   }
-  btn.disabled = false; btn.classList.remove('cooldown');
-  statusEl.textContent = '사용 가능!';
+  btn.disabled=false; btn.classList.remove('cooldown');
+  statusEl.textContent='사용 가능!';
 }
 
 document.getElementById('btn-ability').addEventListener('click', ()=>{
@@ -217,26 +223,19 @@ document.querySelectorAll('.sniper-num').forEach(btn => {
   btn.addEventListener('click', ()=>{
     const num=Number(btn.dataset.num);
     closeSniperModal();
-
-    // 킵되지 않은 첫 번째 주사위에 숫자 확정 고정
     const target=diceMeshes.find(d=>!d.userData.kept);
     if (!target) return;
     const idx=target.userData.index;
     target.userData.value=num;
     target.userData.kept=true;
-    target.userData.outline.visible=true;
-
-    // 저격으로 고정된 주사위는 클릭해도 해제 안 되게 표시
     target.userData.sniped=true;
-
+    target.userData.outline.visible=true;
     diceBodies[idx].type=CANNON.Body.STATIC;
     diceBodies[idx].velocity.setZero();
     diceBodies[idx].angularVelocity.setZero();
     const targetEuler=TARGET_ROTS[num]||TARGET_ROTS[1];
     smoothMoveDie(idx,KEEP_SLOT_X[idx],DISPLAY_Y,KEEP_Z,targetEuler,350);
-
     useAbility();
-
     phaseEl.textContent=`🎯 저격! ${num} 확정 고정! (해제 불가)`;
     setTimeout(()=>{ phaseEl.textContent='주사위를 굴려주세요!'; },1200);
   });
@@ -259,7 +258,6 @@ function useAbility() {
   abilitySystem.usesLeft--;
   abilitySystem.usedThisTurn=true;
   playSFX('playClick');
-  // 멀티플레이면 상대방에게 능력 사용 알림
   if (socket && socket.connected) {
     socket.emit('abilityUsed', { type: abilitySystem.type });
   }
@@ -282,8 +280,21 @@ function startPlayerTurn() {
   document.getElementById('label-ai').style.fontWeight='400';
   updateScoreCard(game.playerScores,game.aiScores,[],true,3,null);
   updateAbilityButton();
-  // 매 턴 시작 시 저격 고정 초기화
-diceMeshes.forEach(d => { d.userData.sniped = false; });
+  diceMeshes.forEach(d => { d.userData.sniped = false; });
+  resetDice();
+  setCanInteract(false);
+}
+
+function startOpponentTurn() {
+  game.isPlayerTurn=false; game.phase='ai';
+  btnRoll.disabled=true;
+  phaseEl.textContent=`${opponentName}의 턴...`;
+  phaseEl.className='phase-msg ai-turn';
+  keepHintEl.textContent='상대방이 플레이 중입니다...';
+  document.getElementById('label-player').style.fontWeight='400';
+  document.getElementById('label-ai').style.fontWeight='900';
+  updateAbilityButton();
+  diceMeshes.forEach(d => { d.userData.sniped = false; });
   resetDice();
   setCanInteract(false);
 }
@@ -293,16 +304,13 @@ btnRoll.addEventListener('click', ()=>{
   if (isRolling) return;
   const keptIdx=diceMeshes.filter(d=>d.userData.kept).map(d=>d.userData.index);
   btnRoll.disabled=true; setCanInteract(false);
-rollDice(keptIdx, values=>{
+  rollDice(keptIdx, values=>{
     game.currentDice=values; game.rollsLeft--;
     rollsLeftEl.textContent=game.rollsLeft;
     game.phase='choosing';
-
-    // 멀티플레이면 굴리기 결과 상대방에게 전송
     if (socket && socket.connected) {
-      socket.emit('rollResult', { values });
+      socket.emit('rollResult', { values, keptIdx });
     }
-
     if (game.rollsLeft>0) { btnRoll.disabled=false; phaseEl.textContent='주사위를 킵하거나 다시 굴리세요!'; }
     else { btnRoll.disabled=true; phaseEl.textContent='점수를 선택하세요! (점수판 클릭)'; }
     setCanInteract(true);
@@ -326,8 +334,12 @@ function onPlayerScoreSelect(cat) {
   updateScoreCard(game.playerScores,game.aiScores,[],false,0,null);
   if (socket && socket.connected) {
     socket.emit('scoreSelect', { playerIndex:myPlayerIndex, cat, score });
-    socket.emit('turnEnd', { turn:myPlayerIndex===0?1:0, round:game.round+1 });
-    if (game.round>=game.totalRounds) showResults();
+    const nextRound = game.round + 1;
+    const nextTurn = myPlayerIndex === 0 ? 1 : 0;
+    socket.emit('turnEnd', { turn:nextTurn, round:nextRound });
+    if (game.round >= game.totalRounds) {
+      setTimeout(showResults, 1200);
+    }
   } else {
     setTimeout(startAITurn, 800);
   }
@@ -402,7 +414,7 @@ function showResults() {
   if (rThPlayer) rThPlayer.textContent=game.playerName;
   const el=document.getElementById('result-winner');
   if (pt>at) { el.textContent=`🏆 ${game.playerName} 승리!`; el.className='result-winner player-win'; setTimeout(()=>playSFX('playWin'),400); }
-  else if (at>pt) { el.textContent='🤖 AI 승리!'; el.className='result-winner ai-win'; setTimeout(()=>playSFX('playLose'),400); }
+  else if (at>pt) { el.textContent=`🏆 ${isMultiMode?opponentName:'AI'} 승리!`; el.className='result-winner ai-win'; setTimeout(()=>playSFX('playLose'),400); }
   else { el.textContent='🤝 무 승 부!'; el.className='result-winner draw'; setTimeout(()=>playSFX('playDraw'),400); }
   const tbody=document.getElementById('result-tbody');
   tbody.innerHTML='';
@@ -425,6 +437,8 @@ function showResults() {
 
 document.getElementById('btn-play-again').addEventListener('click', ()=>{
   selectedAbility=null;
+  isMultiMode=false;
+  socket=null;
   document.querySelectorAll('.ability-choice-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('btn-confirm-ability').disabled=true;
   showScreen('screen-title');
@@ -434,6 +448,20 @@ document.getElementById('btn-play-again').addEventListener('click', ()=>{
 // ══════════════════════════════════════════
 //  멀티플레이 Socket.io
 // ══════════════════════════════════════════
+function showOpponentAbilityMsg(type) {
+  const names = { sniper:'저격 🎯', doubleChance:'더블찬스 🎲' };
+  const msg = document.getElementById('opponent-ability-msg');
+  if (msg) {
+    msg.textContent = `${opponentName}이 ${names[type]} 사용!`;
+    msg.classList.remove('hidden');
+    msg.style.animation = 'none';
+    setTimeout(() => {
+      msg.style.animation = 'fadeInOut 3s ease-in-out forwards';
+      setTimeout(() => msg.classList.add('hidden'), 3000);
+    }, 10);
+  }
+}
+
 function initMulti() {
   socket = io();
 
@@ -458,58 +486,80 @@ function initMulti() {
   socket.on('gameStart', ({ players, firstTurn }) => {
     opponentName = players[myPlayerIndex===0?1:0].name;
     abilitySystem.type = players[myPlayerIndex].ability;
-    abilitySystem.usesLeft = 2;
-    abilitySystem.usedThisTurn = false;
     isMyTurn = myPlayerIndex===firstTurn;
-    document.getElementById('label-ai').textContent = opponentName;
     startGame();
     if (!isMyTurn) {
+      game.isPlayerTurn = false;
+      game.phase = 'ai';
       btnRoll.disabled = true;
       phaseEl.textContent = `${opponentName}의 턴...`;
+      phaseEl.className = 'phase-msg ai-turn';
+      setCanInteract(false);
+      updateAbilityButton();
     }
   });
 
-  socket.on('opponentRoll', ({ values }) => {
-    values.forEach((v,i) => { diceMeshes[i].userData.value=v; });
+  // 상대방 굴리기 결과 받아서 애니메이션 실행
+  socket.on('opponentRoll', ({ values, keptIdx }) => {
+    if (!game.isPlayerTurn) {
+      const kept = keptIdx || [];
+      rollDiceAI(kept, () => {
+        values.forEach((v, i) => {
+          if (!kept.includes(i)) {
+            diceMeshes[i].userData.value = v;
+            const targetEuler = TARGET_ROTS[v] || TARGET_ROTS[1];
+            smoothMoveDie(i, diceMeshes[i].position.x, DISPLAY_Y, INIT_Z, targetEuler, 300);
+          }
+        });
+      });
+    }
   });
 
+  // 상대방 킵 상태 동기화
   socket.on('opponentKeep', ({ idx, kept }) => {
-    diceMeshes[idx].userData.kept=kept;
-    diceMeshes[idx].userData.outline.visible=kept;
-  });
-
-  socket.on('scoreUpdate', ({ playerIndex, cat, score }) => {
-    if (playerIndex!==myPlayerIndex) {
-      game.aiScores[cat]=score;
-      updateScoreCard(game.playerScores,game.aiScores,[],false,0,null);
+    if (!game.isPlayerTurn) {
+      const die = diceMeshes[idx];
+      die.userData.kept = kept;
+      die.userData.outline.visible = kept;
+      const targetEuler = TARGET_ROTS[die.userData.value] || TARGET_ROTS[1];
+      if (kept) {
+        smoothMoveDie(idx, KEEP_SLOT_X[idx], DISPLAY_Y, KEEP_Z, targetEuler, 320);
+      } else {
+        smoothMoveDie(idx, INIT_X[idx], DISPLAY_Y, INIT_Z, targetEuler, 320);
+      }
     }
   });
 
+  // 상대방 점수 동기화
+  socket.on('scoreUpdate', ({ playerIndex, cat, score }) => {
+    if (playerIndex !== myPlayerIndex) {
+      game.aiScores[cat] = score;
+      updateScoreCard(game.playerScores, game.aiScores, [], false, 0, null);
+    }
+  });
+
+  // 턴 전환
   socket.on('nextTurn', ({ turn, round }) => {
-    game.round=round;
-    isMyTurn=turn===myPlayerIndex;
+    game.round = round;
+    isMyTurn = turn === myPlayerIndex;
+    if (game.round > game.totalRounds) {
+      showResults();
+      return;
+    }
     if (isMyTurn) {
+      game.round = round;
       startPlayerTurn();
     } else {
-      btnRoll.disabled=true;
-      phaseEl.textContent=`${opponentName}의 턴...`;
-      phaseEl.className='phase-msg ai-turn';
-      resetDice();
+      game.round = round;
+      startOpponentTurn();
     }
   });
+
+  // 상대방 능력 사용 알림
   socket.on('opponentAbility', ({ type }) => {
-  const names = { sniper:'저격 🎯', doubleChance:'더블찬스 🎲' };
-  const msg = document.getElementById('opponent-ability-msg');
-  if (msg) {
-    msg.textContent = `${opponentName}이 ${names[type]} 사용!`;
-    msg.classList.remove('hidden');
-    msg.style.animation = 'none';
-    setTimeout(() => {
-      msg.style.animation = 'fadeInOut 3s ease-in-out forwards';
-      setTimeout(() => msg.classList.add('hidden'), 3000);
-    }, 10);
-  }
-});
+    showOpponentAbilityMsg(type);
+  });
+
   socket.on('opponentLeft', () => {
     alert('상대방이 나갔어요!');
     location.reload();
@@ -561,6 +611,7 @@ if (btnMultiReady) {
     btnMultiReady.textContent='상대방 기다리는 중...';
   });
 }
+
 // ══════════════════════════════════════════
 //  도움말
 // ══════════════════════════════════════════
