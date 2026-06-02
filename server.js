@@ -68,17 +68,9 @@ socket.on('readyToStart', ({ ability }) => {
     }
   });
 
-// 서버에서 주사위 값 결정 후 양쪽에 동시 전송
-  socket.on('rollStart', ({ keptIdx, keptValues }) => {
-    const room = rooms[socket.roomCode];
-    if (!room) return;
-
-    const values = [0,1,2,3,4].map(i => {
-      if (keptIdx.includes(i)) return keptValues[i];
-      return Math.floor(Math.random() * 6) + 1;
-    });
-
-    io.to(socket.roomCode).emit('doRoll', { values, keptIdx });
+// 주사위 굴리기 결과 공유
+  socket.on('rollResult', (data) => {
+    socket.to(socket.roomCode).emit('opponentRoll', data);
   });
 
   // 킵 상태 공유

@@ -304,26 +304,20 @@ btnRoll.addEventListener('click', ()=>{
   if (isRolling) return;
   const keptIdx=diceMeshes.filter(d=>d.userData.kept).map(d=>d.userData.index);
   btnRoll.disabled=true; setCanInteract(false);
-
-  if (socket && socket.connected) {
-    // 멀티플레이: 서버에 굴리기 요청
-    const keptValues = {};
-    keptIdx.forEach(i => { keptValues[i] = diceMeshes[i].userData.value; });
-    socket.emit('rollStart', { keptIdx, keptValues });
-  } else {
-    // AI모드: 기존 방식
-    rollDice(keptIdx, values=>{
-      game.currentDice=values; game.rollsLeft--;
-      rollsLeftEl.textContent=game.rollsLeft;
-      game.phase='choosing';
-      if (game.rollsLeft>0) { btnRoll.disabled=false; phaseEl.textContent='주사위를 킵하거나 다시 굴리세요!'; }
-      else { btnRoll.disabled=true; phaseEl.textContent='점수를 선택하세요! (점수판 클릭)'; }
-      setCanInteract(true);
-      updateAbilityButton();
-      updateScoreCard(game.playerScores,game.aiScores,game.currentDice,true,game.rollsLeft,onPlayerScoreSelect);
-    });
-    playSFX('playDiceRoll');
-  }
+  rollDice(keptIdx, values=>{
+    game.currentDice=values; game.rollsLeft--;
+    rollsLeftEl.textContent=game.rollsLeft;
+    game.phase='choosing';
+    if (socket && socket.connected) {
+      socket.emit('rollResult', { values, keptIdx });
+    }
+    if (game.rollsLeft>0) { btnRoll.disabled=false; phaseEl.textContent='주사위를 킵하거나 다시 굴리세요!'; }
+    else { btnRoll.disabled=true; phaseEl.textContent='점수를 선택하세요! (점수판 클릭)'; }
+    setCanInteract(true);
+    updateAbilityButton();
+    updateScoreCard(game.playerScores,game.aiScores,game.currentDice,true,game.rollsLeft,onPlayerScoreSelect);
+  });
+  playSFX('playDiceRoll');
 });
 
 function onPlayerScoreSelect(cat) {
@@ -505,33 +499,23 @@ function initMulti() {
     }
   });
 
-  // 서버에서 값 받아서 양쪽 동시에 굴리기
-  socket.on('doRoll', ({ values, keptIdx }) => {
+  socket.on('opponentRoll', ({ values, keptIdx }) => {
+    const kept = keptIdx || [];
     playSFX('playDiceRoll');
-    rollDice(keptIdx, () => {
-      // 애니메이션 끝나면 서버에서 받은 값으로 고정
-      values.forEach((v, i) => {
-        diceMeshes[i].userData.value = v;
-        const targetEuler = TARGET_ROTS[v] || TARGET_ROTS[1];
-        smoothMoveDie(i, diceMeshes[i].position.x, DISPLAY_Y,
-          keptIdx.includes(i) ? KEEP_Z : INIT_Z, targetEuler, 300);
-      });
 
-      // 내 턴이면 점수판 업데이트
-      if (game.isPlayerTurn) {
-        game.currentDice = values;
-        game.rollsLeft--;
-        rollsLeftEl.textContent = game.rollsLeft;
-        game.phase = 'choosing';
-        if (game.rollsLeft>0) { btnRoll.disabled=false; phaseEl.textContent='주사위를 킵하거나 다시 굴리세요!'; }
-        else { btnRoll.disabled=true; phaseEl.textContent='점수를 선택하세요! (점수판 클릭)'; }
-        setCanInteract(true);
-        updateAbilityButton();
-        updateScoreCard(game.playerScores,game.aiScores,game.currentDice,true,game.rollsLeft,onPlayerScoreSelect);
-      } else {
-        phaseEl.textContent=`${opponentName}이 굴렸어요!`;
-        setTimeout(()=>{ phaseEl.textContent=`${opponentName}의 턴...`; }, 1500);
-      }
+    // 상대방 화면에서 실제로 주사위 굴리기 실행
+    rollDice(kept, () => {
+      // 굴리기 끝나면 자연스럽게 해당 값으로 천천히 회전
+      values.forEach((v, i) => {
+        if (!kept.includes(i)) {
+          diceMeshes[i].userData.value = v;
+          const targetEuler = TARGET_ROTS[v] || TARGET_ROTS[1];
+          // 1초에 걸쳐 천천히 자연스럽게 회전
+          smoothMoveDie(i, diceMeshes[i].position.x, DISPLAY_Y, INIT_Z, targetEuler, 1000);
+        }
+      });
+      phaseEl.textContent=`${opponentName}이 굴렸어요!`;
+      setTimeout(()=>{ phaseEl.textContent=`${opponentName}의 턴...`; }, 1500);
     });
   });
 
