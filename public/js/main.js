@@ -499,34 +499,33 @@ function initMulti() {
     }
   });
 
-  // 상대방 굴리기 결과 받아서 애니메이션 실행
+// 상대방 굴리기 - 실제 애니메이션 실행
   socket.on('opponentRoll', ({ values, keptIdx }) => {
-    if (!game.isPlayerTurn) {
-      const kept = keptIdx || [];
-      rollDiceAI(kept, () => {
-        values.forEach((v, i) => {
-          if (!kept.includes(i)) {
-            diceMeshes[i].userData.value = v;
-            const targetEuler = TARGET_ROTS[v] || TARGET_ROTS[1];
-            smoothMoveDie(i, diceMeshes[i].position.x, DISPLAY_Y, INIT_Z, targetEuler, 300);
-          }
-        });
+    const kept = keptIdx || [];
+    playSFX('playDiceRoll');
+    rollDice(kept, () => {
+      // 애니메이션 끝나면 상대방이 받은 값으로 강제 설정
+      values.forEach((v, i) => {
+        diceMeshes[i].userData.value = v;
+        const targetEuler = TARGET_ROTS[v] || TARGET_ROTS[1];
+        smoothMoveDie(i, diceMeshes[i].position.x, DISPLAY_Y, INIT_Z, targetEuler, 300);
       });
-    }
+    });
   });
 
-  // 상대방 킵 상태 동기화
+  // 상대방 킵 - 실제 주사위 이동 애니메이션
   socket.on('opponentKeep', ({ idx, kept }) => {
-    if (!game.isPlayerTurn) {
-      const die = diceMeshes[idx];
-      die.userData.kept = kept;
-      die.userData.outline.visible = kept;
-      const targetEuler = TARGET_ROTS[die.userData.value] || TARGET_ROTS[1];
-      if (kept) {
-        smoothMoveDie(idx, KEEP_SLOT_X[idx], DISPLAY_Y, KEEP_Z, targetEuler, 320);
-      } else {
-        smoothMoveDie(idx, INIT_X[idx], DISPLAY_Y, INIT_Z, targetEuler, 320);
-      }
+    const die = diceMeshes[idx];
+    die.userData.kept = kept;
+    die.userData.outline.visible = kept;
+    const targetEuler = TARGET_ROTS[die.userData.value] || TARGET_ROTS[1];
+    if (kept) {
+      diceBodies[idx].type = CANNON.Body.STATIC;
+      diceBodies[idx].velocity.setZero();
+      diceBodies[idx].angularVelocity.setZero();
+      smoothMoveDie(idx, KEEP_SLOT_X[idx], DISPLAY_Y, KEEP_Z, targetEuler, 320);
+    } else {
+      smoothMoveDie(idx, INIT_X[idx], DISPLAY_Y, INIT_Z, targetEuler, 320);
     }
   });
 
