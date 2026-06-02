@@ -352,6 +352,8 @@ renderer.domElement.addEventListener('click', e => {
 });
 
 function toggleKeep(idx) {
+    // 저격으로 고정된 주사위는 해제 불가
+  if (diceMeshes[idx].userData.sniped) return;
   const die  = diceMeshes[idx];
   const body = diceBodies[idx];
   die.userData.kept = !die.userData.kept;

@@ -5,9 +5,21 @@ const game = {
 };
 
 const abilitySystem = {
-  type:null, usesLeft:2, usedThisTurn:false, sniperActive:false,
+  type: null,
+  // 저격: 1회, 더블찬스: 2회
+  usesLeft: 0,
+  usedThisTurn: false,
+  sniperActive: false,
+
+  init(type) {
+    this.type = type;
+    this.usesLeft = (type === 'sniper') ? 1 : 2;
+    this.usedThisTurn = false;
+    this.sniperActive = false;
+  },
+
   canUse() {
-    if (this.usesLeft<=0) return false;
+    if (this.usesLeft <= 0) return false;
     if (this.usedThisTurn) return false;
     return true;
   },
@@ -139,7 +151,7 @@ document.getElementById('btn-confirm-ability').addEventListener('click', ()=>{
 
 function startGame() {
   game.round=1; game.playerScores={}; game.aiScores={};
-  abilitySystem.usesLeft=2; abilitySystem.usedThisTurn=false; abilitySystem.sniperActive=false;
+  abilitySystem.init(abilitySystem.type);
   document.getElementById('label-player').textContent=game.playerName;
   updateAbilityButton();
   showScreen('screen-game');
@@ -149,21 +161,45 @@ function startGame() {
 }
 
 function updateAbilityButton() {
-  const ab=abilitySystem;
-  const icons={ sniper:'🎯', doubleChance:'🎲' };
-  const names={ sniper:'저격', doubleChance:'더블찬스' };
-  document.getElementById('ability-btn-icon').textContent=icons[ab.type]||'⚡';
-  document.getElementById('ability-btn-name').textContent=names[ab.type]||'능력';
-  document.getElementById('ability-charge-1').className='charge'+(ab.usesLeft>=1?'':' empty');
-  document.getElementById('ability-charge-2').className='charge'+(ab.usesLeft>=2?'':' empty');
-  const statusEl=document.getElementById('ability-btn-status');
-  const btn=document.getElementById('btn-ability');
-  if (!game.isPlayerTurn||game.phase==='ai') { btn.disabled=true; btn.classList.remove('cooldown'); statusEl.textContent='AI 턴'; return; }
-  if (ab.usesLeft<=0) { btn.disabled=true; btn.classList.add('cooldown'); statusEl.textContent='사용 완료'; return; }
-  if (ab.usedThisTurn) { btn.disabled=true; btn.classList.add('cooldown'); statusEl.textContent='이번 턴 사용 완료'; return; }
-  if (ab.type==='doubleChance'&&game.rollsLeft<3) { btn.disabled=true; btn.classList.add('cooldown'); statusEl.textContent='굴리기 전에만 사용 가능'; return; }
-  if (ab.type==='sniper'&&game.phase!=='choosing') { btn.disabled=true; btn.classList.remove('cooldown'); statusEl.textContent='굴리기 후 사용 가능'; return; }
-  btn.disabled=false; btn.classList.remove('cooldown'); statusEl.textContent='사용 가능!';
+  const ab = abilitySystem;
+  const icons = { sniper:'🎯', doubleChance:'🎲' };
+  const names = { sniper:'저격', doubleChance:'더블찬스' };
+  document.getElementById('ability-btn-icon').textContent = icons[ab.type]||'⚡';
+  document.getElementById('ability-btn-name').textContent = names[ab.type]||'능력';
+
+  // 충전 표시 (저격은 1개, 더블찬스는 2개)
+  const charge1 = document.getElementById('ability-charge-1');
+  const charge2 = document.getElementById('ability-charge-2');
+  if (ab.type === 'sniper') {
+    charge1.className = 'charge' + (ab.usesLeft >= 1 ? '' : ' empty');
+    charge2.style.display = 'none';
+  } else {
+    charge1.className = 'charge' + (ab.usesLeft >= 1 ? '' : ' empty');
+    charge2.style.display = '';
+    charge2.className = 'charge' + (ab.usesLeft >= 2 ? '' : ' empty');
+  }
+
+  const statusEl = document.getElementById('ability-btn-status');
+  const btn = document.getElementById('btn-ability');
+
+  if (!game.isPlayerTurn || game.phase === 'ai') {
+    btn.disabled = true; btn.classList.remove('cooldown');
+    statusEl.textContent = 'AI 턴'; return;
+  }
+  if (ab.usesLeft <= 0) {
+    btn.disabled = true; btn.classList.add('cooldown');
+    statusEl.textContent = '사용 완료'; return;
+  }
+  if (ab.usedThisTurn) {
+    btn.disabled = true; btn.classList.add('cooldown');
+    statusEl.textContent = '이번 턴 사용 완료'; return;
+  }
+  if (game.rollsLeft < 3) {
+    btn.disabled = true; btn.classList.add('cooldown');
+    statusEl.textContent = '굴리기 전에만 사용 가능'; return;
+  }
+  btn.disabled = false; btn.classList.remove('cooldown');
+  statusEl.textContent = '사용 가능!';
 }
 
 document.getElementById('btn-ability').addEventListener('click', ()=>{
@@ -181,25 +217,28 @@ document.querySelectorAll('.sniper-num').forEach(btn => {
   btn.addEventListener('click', ()=>{
     const num=Number(btn.dataset.num);
     closeSniperModal();
+
+    // 킵되지 않은 첫 번째 주사위에 숫자 확정 고정
     const target=diceMeshes.find(d=>!d.userData.kept);
     if (!target) return;
     const idx=target.userData.index;
     target.userData.value=num;
     target.userData.kept=true;
     target.userData.outline.visible=true;
+
+    // 저격으로 고정된 주사위는 클릭해도 해제 안 되게 표시
+    target.userData.sniped=true;
+
     diceBodies[idx].type=CANNON.Body.STATIC;
     diceBodies[idx].velocity.setZero();
     diceBodies[idx].angularVelocity.setZero();
     const targetEuler=TARGET_ROTS[num]||TARGET_ROTS[1];
     smoothMoveDie(idx,KEEP_SLOT_X[idx],DISPLAY_Y,KEEP_Z,targetEuler,350);
+
     useAbility();
-    const newDice=diceMeshes.map(d=>d.userData.value);
-    if (newDice.every(v=>v>0)&&game.currentDice.length===5) {
-      game.currentDice=newDice;
-      updateScoreCard(game.playerScores,game.aiScores,game.currentDice,true,game.rollsLeft,onPlayerScoreSelect);
-    }
-    phaseEl.textContent=`🎯 저격! ${num} 확정 고정!`;
-    setTimeout(()=>{ if(game.rollsLeft>0) phaseEl.textContent='주사위를 킵하거나 다시 굴리세요!'; else phaseEl.textContent='점수를 선택하세요! (점수판 클릭)'; },1200);
+
+    phaseEl.textContent=`🎯 저격! ${num} 확정 고정! (해제 불가)`;
+    setTimeout(()=>{ phaseEl.textContent='주사위를 굴려주세요!'; },1200);
   });
 });
 
@@ -239,6 +278,8 @@ function startPlayerTurn() {
   document.getElementById('label-ai').style.fontWeight='400';
   updateScoreCard(game.playerScores,game.aiScores,[],true,3,null);
   updateAbilityButton();
+  // 매 턴 시작 시 저격 고정 초기화
+diceMeshes.forEach(d => { d.userData.sniped = false; });
   resetDice();
   setCanInteract(false);
 }
@@ -498,5 +539,21 @@ if (btnMultiReady) {
     btnMultiReady.textContent='상대방 기다리는 중...';
   });
 }
+// ══════════════════════════════════════════
+//  도움말
+// ══════════════════════════════════════════
+function openHelp() {
+  document.getElementById('help-modal').classList.remove('hidden');
+}
+function closeHelp() {
+  document.getElementById('help-modal').classList.add('hidden');
+}
 
+document.getElementById('help-close').addEventListener('click', closeHelp);
+document.getElementById('help-modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('help-modal')) closeHelp();
+});
+
+document.getElementById('btn-help').addEventListener('click', openHelp);
+document.getElementById('btn-help-ingame').addEventListener('click', openHelp);
 showScreen('screen-title');

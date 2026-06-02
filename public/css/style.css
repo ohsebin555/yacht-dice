@@ -815,3 +815,124 @@ body {
 /* 방 코드 표시 */
 .room-code { display: none; }
 .multi-status { display: none; }
+
+/* ════════════════════════════════════════
+   도움말 모달
+════════════════════════════════════════ */
+.help-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.help-panel {
+  background: #fff;
+  border-radius: 20px;
+  padding: 0;
+  width: 600px;
+  max-width: 92vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.help-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 28px;
+  border-bottom: 2px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+.help-header h2 {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.help-close-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #f0f0f0;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s;
+}
+.help-close-btn:hover { background: #ddd; }
+
+.help-content {
+  padding: 20px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.help-section h3 {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #AADF2E;
+}
+
+.help-section ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.help-section ul li {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.92rem;
+  color: #444;
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.help-section ul li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: #3A9A00;
+}
+
+/* 게임 화면 도움말 버튼 */
+.btn-help-ingame {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(167,139,250,.4);
+  background: rgba(124,58,237,.2);
+  color: #c4b5fd;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 100;
+  transition: all .2s;
+}
+.btn-help-ingame:hover {
+  background: rgba(124,58,237,.4);
+  border-color: rgba(167,139,250,.8);
+}

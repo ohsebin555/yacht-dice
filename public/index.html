@@ -25,6 +25,7 @@
              class="hand-input" placeholder="이름 입력..."
              maxlength="10" autocomplete="off"/>
       <button id="btn-to-mode" class="hand-btn">시작하기</button>
+      <button id="btn-help" class="hand-btn" style="background:#f5f5f5; color:#666; box-shadow:4px 4px 0 #ccc; border-color:#ccc;">📖 게임 규칙</button>
     </div>
   </div>
 </div>
@@ -281,7 +282,7 @@
           <span class="charge" id="ability-charge-2">●</span>
         </span>
         <span id="ability-btn-status" class="ability-status">굴리기 후 사용 가능</span>
-      </button>
+    <button class="btn-help-ingame" id="btn-help-ingame">?</button>
     </div>
   </main>
 </div>
@@ -341,5 +342,70 @@
 <script src="js/ai.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/main.js"></script>
+<!-- 도움말 모달 -->
+<div id="help-modal" class="help-modal hidden">
+  <div class="help-panel">
+    <div class="help-header">
+      <h2>📖 게임 규칙</h2>
+      <button id="help-close" class="help-close-btn">✕</button>
+    </div>
+    <div class="help-content">
+
+      <div class="help-section">
+        <h3>🎲 기본 규칙</h3>
+        <ul>
+          <li>주사위 5개를 굴려서 족보를 완성해요</li>
+          <li>턴마다 최대 3번 굴릴 수 있어요</li>
+          <li>굴린 후 주사위를 클릭하면 킵(고정)할 수 있어요</li>
+          <li>총 12라운드 진행 후 점수가 높은 플레이어가 승리!</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>📊 상단 족보 (해당 숫자 합산)</h3>
+        <ul>
+          <li><b>Aces</b>: 1이 나온 주사위 눈의 합 (최대 5점)</li>
+          <li><b>Deuces</b>: 2가 나온 주사위 눈의 합 (최대 10점)</li>
+          <li><b>Threes</b>: 3이 나온 주사위 눈의 합 (최대 15점)</li>
+          <li><b>Fours</b>: 4가 나온 주사위 눈의 합 (최대 20점)</li>
+          <li><b>Fives</b>: 5가 나온 주사위 눈의 합 (최대 25점)</li>
+          <li><b>Sixes</b>: 6이 나온 주사위 눈의 합 (최대 30점)</li>
+          <li><b>+35 보너스</b>: 상단 합계가 63점 이상이면 +35점!</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>🏆 하단 족보</h3>
+        <ul>
+          <li><b>Choice</b>: 주사위 5개 전부 합산</li>
+          <li><b>4 of a Kind</b>: 같은 숫자 4개 → 그 숫자 × 4</li>
+          <li><b>Full House</b>: 3개 + 2개 조합 → 5개 전부 합산</li>
+          <li><b>S. Straight</b>: 4개 연속 (1-4, 2-5, 3-6) → 15점</li>
+          <li><b>L. Straight</b>: 5개 연속 (1-5, 2-6) → 30점</li>
+          <li><b>Yacht</b>: 5개 모두 같은 숫자 → 50점!</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>⚡ 특수 능력</h3>
+        <ul>
+          <li><b>저격 🎯</b>: 굴리기 전 사용 → 원하는 숫자 1개 확정 고정 (게임당 1회, 해제 불가)</li>
+          <li><b>더블찬스 🎲</b>: 굴리기 전 사용 → 이번 턴 굴리기 +1 (게임당 2회)</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>🏅 승리 조건</h3>
+        <ul>
+          <li>12라운드가 끝나면 총점을 비교해요</li>
+          <li>상단 합계 + 보너스 + 하단 합계 = 최종 점수</li>
+          <li>점수가 높은 플레이어가 승리!</li>
+          <li>동점이면 무승부!</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
 </body>
 </html>
