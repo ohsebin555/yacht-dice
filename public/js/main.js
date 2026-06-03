@@ -499,26 +499,6 @@ function initMulti() {
     }
   });
 
-  socket.on('opponentRoll', ({ values, keptIdx }) => {
-    const kept = keptIdx || [];
-    playSFX('playDiceRoll');
-
-    // 상대방 화면에서 실제로 주사위 굴리기 실행
-    rollDice(kept, () => {
-      // 굴리기 끝나면 자연스럽게 해당 값으로 천천히 회전
-      values.forEach((v, i) => {
-        if (!kept.includes(i)) {
-          diceMeshes[i].userData.value = v;
-          const targetEuler = TARGET_ROTS[v] || TARGET_ROTS[1];
-          // 1초에 걸쳐 천천히 자연스럽게 회전
-          smoothMoveDie(i, diceMeshes[i].position.x, DISPLAY_Y, INIT_Z, targetEuler, 1000);
-        }
-      });
-      phaseEl.textContent=`${opponentName}이 굴렸어요!`;
-      setTimeout(()=>{ phaseEl.textContent=`${opponentName}의 턴...`; }, 1500);
-    });
-  });
-
   // 상대방 킵 - 실제 주사위 이동 애니메이션
   socket.on('opponentKeep', ({ idx, kept }) => {
     const die = diceMeshes[idx];
@@ -572,7 +552,7 @@ function initMulti() {
       });
     }
   });
-    
+
   socket.on('opponentLeft', () => {
     alert('상대방이 나갔어요!');
     location.reload();

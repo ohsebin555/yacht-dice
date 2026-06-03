@@ -68,11 +68,6 @@ socket.on('readyToStart', ({ ability }) => {
     }
   });
 
-// 주사위 굴리기 결과 공유
-  socket.on('rollResult', (data) => {
-    socket.to(socket.roomCode).emit('opponentRoll', data);
-  });
-
   // 킵 상태 공유
   socket.on('keepChange', (data) => {
     socket.to(socket.roomCode).emit('opponentKeep', data);
@@ -87,7 +82,7 @@ socket.on('readyToStart', ({ ability }) => {
   socket.on('turnEnd', (data) => {
     io.to(socket.roomCode).emit('nextTurn', data);
   });
-  
+
 // 주사위 실시간 위치 동기화
   socket.on('diceState', (data) => {
     socket.to(socket.roomCode).emit('opponentDiceState', data);
