@@ -511,17 +511,18 @@ function initMulti() {
   });
 
   // 상대방 주사위 실시간 위치 동기화
-  socket.on('opponentDiceState', (diceState) => {
-    if (!game.isPlayerTurn) {
-      diceState.forEach((state, i) => {
-        diceMeshes[i].position.set(state.px, state.py, state.pz);
-        diceMeshes[i].quaternion.set(state.qx, state.qy, state.qz, state.qw);
-        diceMeshes[i].userData.kept=state.kept;
-        diceMeshes[i].userData.value=state.value;
-        diceMeshes[i].userData.outline.visible=state.kept;
-      });
-    }
-  });
+socket.on('opponentDiceState', (diceState) => {
+  if (!game.isPlayerTurn) {
+    diceState.forEach((state, i) => {
+      diceMeshes[i].position.set(state.px, state.py, state.pz);
+      diceMeshes[i].quaternion.set(state.qx, state.qy, state.qz, state.qw);
+      diceMeshes[i].userData.kept = state.kept;
+      diceMeshes[i].userData.value = state.value;
+      diceMeshes[i].userData.sniped = state.sniped;
+      diceMeshes[i].userData.outline.visible = state.kept;
+    });
+  }
+});
 
   // 상대방 킵 동기화
   socket.on('opponentKeep', ({ idx, kept }) => {
