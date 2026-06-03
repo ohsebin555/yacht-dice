@@ -87,6 +87,11 @@ socket.on('readyToStart', ({ ability }) => {
   socket.on('turnEnd', (data) => {
     io.to(socket.roomCode).emit('nextTurn', data);
   });
+  
+// 주사위 실시간 위치 동기화
+  socket.on('diceState', (data) => {
+    socket.to(socket.roomCode).emit('opponentDiceState', data);
+  });
 
   // 능력 사용
   socket.on('abilityUsed', (data) => {

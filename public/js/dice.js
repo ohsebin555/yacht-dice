@@ -616,25 +616,32 @@ let lastTime = performance.now();
 
 function animate() {
   requestAnimationFrame(animate);
-  const now   = performance.now();
-  const delta = Math.min((now - lastTime) / 1000, 0.05);
-  lastTime    = now;
+  const now=performance.now();
+  const delta=Math.min((now-lastTime)/1000,0.05);
+  lastTime=now;
 
   if (physicsRunning) {
-    world.step(1/60, delta, 10);
-    diceMeshes.forEach((die, i) => {
+    world.step(1/60,delta,10);
+    diceMeshes.forEach((die,i) => {
       if (die.userData.kept) return;
-      const body = diceBodies[i];
-      if (body.type !== CANNON.Body.DYNAMIC) return;
-      die.position.set(body.position.x, body.position.y, body.position.z);
-      die.quaternion.set(
-        body.quaternion.x, body.quaternion.y,
-        body.quaternion.z, body.quaternion.w
-      );
+      const body=diceBodies[i];
+      if (body.type!==CANNON.Body.DYNAMIC) return;
+      die.position.set(body.position.x,body.position.y,body.position.z);
+      die.quaternion.set(body.quaternion.x,body.quaternion.y,body.quaternion.z,body.quaternion.w);
     });
+
+    // 매 프레임 주사위 위치/회전 전송
+    if (typeof socket !== 'undefined' && socket && socket.connected) {
+      const diceState = diceMeshes.map(die => ({
+        px: die.position.x, py: die.position.y, pz: die.position.z,
+        qx: die.quaternion.x, qy: die.quaternion.y,
+        qz: die.quaternion.z, qw: die.quaternion.w,
+      }));
+      socket.emit('diceState', diceState);
+    }
   }
 
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 animate();
 

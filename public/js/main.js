@@ -563,6 +563,16 @@ function initMulti() {
     showOpponentAbilityMsg(type);
   });
 
+// 상대방 주사위 실시간 위치 동기화
+  socket.on('opponentDiceState', (diceState) => {
+    if (!game.isPlayerTurn) {
+      diceState.forEach((state, i) => {
+        diceMeshes[i].position.set(state.px, state.py, state.pz);
+        diceMeshes[i].quaternion.set(state.qx, state.qy, state.qz, state.qw);
+      });
+    }
+  });
+    
   socket.on('opponentLeft', () => {
     alert('상대방이 나갔어요!');
     location.reload();
