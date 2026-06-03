@@ -131,11 +131,11 @@ function goToMode() {
 }
 
 document.getElementById('btn-ai-mode').addEventListener('click', ()=>{
-  isMultiMode = false;
+  isMultiMode=false;
   showScreen('screen-ability');
 });
 document.getElementById('btn-user-mode').addEventListener('click', ()=>{
-  isMultiMode = true;
+  isMultiMode=true;
   showScreen('screen-multi');
 });
 
@@ -159,7 +159,7 @@ function startGame() {
   game.round=1; game.playerScores={}; game.aiScores={};
   abilitySystem.init(abilitySystem.type);
   document.getElementById('label-player').textContent=game.playerName;
-  document.getElementById('label-ai').textContent=isMultiMode ? opponentName : 'AI';
+  document.getElementById('label-ai').textContent=isMultiMode?opponentName:'AI';
   updateAbilityButton();
   showScreen('screen-game');
   setTimeout(()=>window.dispatchEvent(new Event('resize')),30);
@@ -264,6 +264,20 @@ function useAbility() {
   updateAbilityButton();
 }
 
+function showOpponentAbilityMsg(type) {
+  const names = { sniper:'저격 🎯', doubleChance:'더블찬스 🎲' };
+  const msg = document.getElementById('opponent-ability-msg');
+  if (msg) {
+    msg.textContent = `${opponentName}이 ${names[type]} 사용!`;
+    msg.classList.remove('hidden');
+    msg.style.animation = 'none';
+    setTimeout(() => {
+      msg.style.animation = 'fadeInOut 3s ease-in-out forwards';
+      setTimeout(() => msg.classList.add('hidden'), 3000);
+    }, 10);
+  }
+}
+
 function startPlayerTurn() {
   game.isPlayerTurn=true; game.rollsLeft=3; game.maxRolls=3;
   abilitySystem.usedThisTurn=false;
@@ -280,7 +294,7 @@ function startPlayerTurn() {
   document.getElementById('label-ai').style.fontWeight='400';
   updateScoreCard(game.playerScores,game.aiScores,[],true,3,null);
   updateAbilityButton();
-  diceMeshes.forEach(d => { d.userData.sniped = false; });
+  diceMeshes.forEach(d => { d.userData.sniped=false; });
   resetDice();
   setCanInteract(false);
 }
@@ -294,7 +308,7 @@ function startOpponentTurn() {
   document.getElementById('label-player').style.fontWeight='400';
   document.getElementById('label-ai').style.fontWeight='900';
   updateAbilityButton();
-  diceMeshes.forEach(d => { d.userData.sniped = false; });
+  diceMeshes.forEach(d => { d.userData.sniped=false; });
   resetDice();
   setCanInteract(false);
 }
@@ -308,9 +322,6 @@ btnRoll.addEventListener('click', ()=>{
     game.currentDice=values; game.rollsLeft--;
     rollsLeftEl.textContent=game.rollsLeft;
     game.phase='choosing';
-    if (socket && socket.connected) {
-      socket.emit('rollResult', { values, keptIdx });
-    }
     if (game.rollsLeft>0) { btnRoll.disabled=false; phaseEl.textContent='주사위를 킵하거나 다시 굴리세요!'; }
     else { btnRoll.disabled=true; phaseEl.textContent='점수를 선택하세요! (점수판 클릭)'; }
     setCanInteract(true);
@@ -332,12 +343,11 @@ function onPlayerScoreSelect(cat) {
   phaseEl.textContent=`✅ ${CAT_NAMES[cat]}: ${score}점!`;
   btnRoll.disabled=true; setCanInteract(false); closeSniperModal();
   updateScoreCard(game.playerScores,game.aiScores,[],false,0,null);
+
   if (socket && socket.connected) {
     socket.emit('scoreSelect', { playerIndex:myPlayerIndex, cat, score });
-    const nextRound = game.round + 1;
-    const nextTurn = myPlayerIndex === 0 ? 1 : 0;
-    socket.emit('turnEnd', { turn:nextTurn, round:nextRound });
-    if (game.round >= game.totalRounds) {
+    socket.emit('turnEnd', { playerIndex:myPlayerIndex, round:game.round });
+    if (game.round >= game.totalRounds && myPlayerIndex === 1) {
       setTimeout(showResults, 1200);
     }
   } else {
@@ -435,12 +445,27 @@ function showResults() {
   tbody.appendChild(tTr);
 }
 
+// 다시하기 → 처음화면으로
 document.getElementById('btn-play-again').addEventListener('click', ()=>{
   selectedAbility=null;
   isMultiMode=false;
   socket=null;
+  opponentName='AI';
   document.querySelectorAll('.ability-choice-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('btn-confirm-ability').disabled=true;
+  // 멀티플레이 화면 초기화
+  const stateMain = document.getElementById('multi-state-main');
+  const stateWait = document.getElementById('multi-state-wait');
+  const stateAbility = document.getElementById('multi-state-ability');
+  if (stateMain) stateMain.classList.remove('hidden');
+  if (stateWait) stateWait.classList.add('hidden');
+  if (stateAbility) stateAbility.classList.add('hidden');
+  const btnMultiReady = document.getElementById('btn-multi-ready');
+  if (btnMultiReady) { btnMultiReady.disabled=true; btnMultiReady.textContent='능력 선택 후 준비 완료!'; }
+  const multiOpponentStatus = document.getElementById('multi-opponent-status');
+  const multiOpponentReady = document.getElementById('multi-opponent-ready');
+  if (multiOpponentStatus) multiOpponentStatus.classList.remove('hidden');
+  if (multiOpponentReady) multiOpponentReady.classList.add('hidden');
   showScreen('screen-title');
   createBgDice('bg-dice-wrap');
 });
@@ -448,20 +473,6 @@ document.getElementById('btn-play-again').addEventListener('click', ()=>{
 // ══════════════════════════════════════════
 //  멀티플레이 Socket.io
 // ══════════════════════════════════════════
-function showOpponentAbilityMsg(type) {
-  const names = { sniper:'저격 🎯', doubleChance:'더블찬스 🎲' };
-  const msg = document.getElementById('opponent-ability-msg');
-  if (msg) {
-    msg.textContent = `${opponentName}이 ${names[type]} 사용!`;
-    msg.classList.remove('hidden');
-    msg.style.animation = 'none';
-    setTimeout(() => {
-      msg.style.animation = 'fadeInOut 3s ease-in-out forwards';
-      setTimeout(() => msg.classList.add('hidden'), 3000);
-    }, 10);
-  }
-}
-
 function initMulti() {
   socket = io();
 
@@ -489,48 +500,57 @@ function initMulti() {
     isMyTurn = myPlayerIndex===firstTurn;
     startGame();
     if (!isMyTurn) {
-      game.isPlayerTurn = false;
-      game.phase = 'ai';
-      btnRoll.disabled = true;
-      phaseEl.textContent = `${opponentName}의 턴...`;
-      phaseEl.className = 'phase-msg ai-turn';
+      game.isPlayerTurn=false;
+      game.phase='ai';
+      btnRoll.disabled=true;
+      phaseEl.textContent=`${opponentName}의 턴...`;
+      phaseEl.className='phase-msg ai-turn';
       setCanInteract(false);
       updateAbilityButton();
     }
   });
 
-  // 상대방 킵 - 실제 주사위 이동 애니메이션
+  // 상대방 주사위 실시간 위치 동기화
+  socket.on('opponentDiceState', (diceState) => {
+    if (!game.isPlayerTurn) {
+      diceState.forEach((state, i) => {
+        diceMeshes[i].position.set(state.px, state.py, state.pz);
+        diceMeshes[i].quaternion.set(state.qx, state.qy, state.qz, state.qw);
+        diceMeshes[i].userData.kept=state.kept;
+        diceMeshes[i].userData.value=state.value;
+        diceMeshes[i].userData.outline.visible=state.kept;
+      });
+    }
+  });
+
+  // 상대방 킵 동기화
   socket.on('opponentKeep', ({ idx, kept }) => {
-    const die = diceMeshes[idx];
-    die.userData.kept = kept;
-    die.userData.outline.visible = kept;
-    const targetEuler = TARGET_ROTS[die.userData.value] || TARGET_ROTS[1];
-    if (kept) {
-      diceBodies[idx].type = CANNON.Body.STATIC;
-      diceBodies[idx].velocity.setZero();
-      diceBodies[idx].angularVelocity.setZero();
-      smoothMoveDie(idx, KEEP_SLOT_X[idx], DISPLAY_Y, KEEP_Z, targetEuler, 320);
-    } else {
-      smoothMoveDie(idx, INIT_X[idx], DISPLAY_Y, INIT_Z, targetEuler, 320);
+    if (!game.isPlayerTurn) {
+      const die=diceMeshes[idx];
+      die.userData.kept=kept;
+      die.userData.outline.visible=kept;
     }
   });
 
   // 상대방 점수 동기화
-  socket.on('scoreUpdate', ({ playerIndex, cat, score }) => {
+  socket.on('opponentScore', ({ playerIndex, cat, score }) => {
     if (playerIndex !== myPlayerIndex) {
-      game.aiScores[cat] = score;
-      updateScoreCard(game.playerScores, game.aiScores, [], false, 0, null);
+      game.aiScores[cat]=score;
+      updateScoreCard(game.playerScores,game.aiScores,[],false,0,null);
     }
   });
 
   // 턴 전환
   socket.on('nextTurn', ({ turn, round }) => {
-    game.round = round;
-    isMyTurn = turn === myPlayerIndex;
+    game.round=round;
+    isMyTurn=turn===myPlayerIndex;
+    turnEl.textContent=game.round;
+
     if (game.round > game.totalRounds) {
-      showResults();
+      setTimeout(showResults, 1200);
       return;
     }
+
     if (isMyTurn) {
       startPlayerTurn();
     } else {
@@ -541,16 +561,6 @@ function initMulti() {
   // 상대방 능력 사용 알림
   socket.on('opponentAbility', ({ type }) => {
     showOpponentAbilityMsg(type);
-  });
-
-// 상대방 주사위 실시간 위치 동기화
-  socket.on('opponentDiceState', (diceState) => {
-    if (!game.isPlayerTurn) {
-      diceState.forEach((state, i) => {
-        diceMeshes[i].position.set(state.px, state.py, state.pz);
-        diceMeshes[i].quaternion.set(state.qx, state.qy, state.qz, state.qw);
-      });
-    }
   });
 
   socket.on('opponentLeft', () => {
