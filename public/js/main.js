@@ -615,6 +615,25 @@ if (btnMultiReady) {
     btnMultiReady.textContent='상대방 기다리는 중...';
   });
 }
+// ══════════════════════════════════════════
+//  뒤로가기 버튼
+// ══════════════════════════════════════════
+const btnBackMode = document.getElementById('btn-back-mode');
+const btnBackAbility = document.getElementById('btn-back-ability');
+const btnBackMulti = document.getElementById('btn-back-multi');
+const btnBackWait = document.getElementById('btn-back-wait');
+
+if (btnBackMode) btnBackMode.addEventListener('click', ()=>{ showScreen('screen-title'); });
+if (btnBackAbility) btnBackAbility.addEventListener('click', ()=>{ showScreen('screen-mode'); });
+if (btnBackMulti) btnBackMulti.addEventListener('click', ()=>{ showScreen('screen-mode'); });
+if (btnBackWait) btnBackWait.addEventListener('click', ()=>{
+  // 소켓 연결 끊기
+  if (socket) { socket.disconnect(); socket=null; }
+  // 멀티 화면 초기화
+  document.getElementById('multi-state-main').classList.remove('hidden');
+  document.getElementById('multi-state-wait').classList.add('hidden');
+  showScreen('screen-multi');
+});
 
 // ══════════════════════════════════════════
 //  도움말
